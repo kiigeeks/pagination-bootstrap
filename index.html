@@ -10,43 +10,42 @@
 
     </head>
     <body>
-        <div class="container mt-3 table-responsive">
-            <table class="table table-striped" >
-                <thead>
-                    <tr>
-                        <th>Kode</th>
-                        <th>Satuan</th>
-                        <th>Paket</th>
-                        <th>Metode</th>
-                        <th>Tanggal kontrak</th>
-                    </tr>
-                </thead>
-                <tbody id="data-table">
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th>Kode</th>
-                        <th>Satuan</th>
-                        <th>Paket</th>
-                        <th>Metode</th>
-                        <th>Tanggal kontrak</th>
-                    </tr>
-                </tfoot>
-            </table>
+        <div class="container mt-5">
+            <div class="d-flex justify-content-end mb-3">
+                <input type="text" class="form-control w-25 end-0" id="inputText" placeholder="Cari Paket">
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped" >
+                    <thead>
+                        <tr>
+                            <th>Kode</th>
+                            <th>Satuan</th>
+                            <th>Paket</th>
+                            <th>Metode</th>
+                            <th>Tanggal kontrak</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table">
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Kode</th>
+                            <th>Satuan</th>
+                            <th>Paket</th>
+                            <th>Metode</th>
+                            <th>Tanggal kontrak</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
             <div class="d-flex flex-row-reverse justify-content-between">
                 <nav aria-label="pagination">
                     <ul class="pagination">
                         <li class="page-item disabled" id="button-prev"> 
                             <button onclick="handlePrev()" class="page-link">Previous</button>
                         </li>
-                        <!-- <li class="page-item" id="data-page">
-                        </li> -->
-                        <!-- <li class="page-item active">
-                            <a class="page-link" href="#">2</a>
+                        <li class="page-item" id="data-page">
                         </li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">3</a>
-                        </li> -->
                         <li class="page-item" id="button-next">
                             <button onclick="handleNext()" class="page-link">Next</button>
                         </li>
@@ -68,12 +67,29 @@
         <script>
             let index = 1
             let maxPages = 0
+            let maxLooping = 5
+            let currentLooping = 1
+            let searchText = ""
     
             const dataTable = document.getElementById('data-table');
             const buttonNext = document.getElementById('button-next');
             const buttonPrev = document.getElementById('button-prev');
             const currentPage = document.getElementById('currentPage');
             const maxPage = document.getElementById('maxPage');
+            const pagination = document.getElementById("data-page");
+            const inputText = document.getElementById("inputText");
+
+            inputText.addEventListener("keydown", function (event) {
+                // "Enter" = 13
+                if (event.keyCode === 13) {
+                    searchText = inputText.value;
+                    fetchApi(1)
+                    index = 1
+                    maxPages = 0
+                    maxLooping = 5
+                    currentLooping = 1
+                }
+            });
     
             const fetchApi = (i) => {
                 while (dataTable.firstChild) {
@@ -81,6 +97,11 @@
                 }
 
                 let url = 'https://info.dresstyleone.com/public/api/datapakets/getall?page='+i+'&tahun=2023';
+
+                if (searchText !== "") {
+                    url = 'https://info.dresstyleone.com/public/api/datapakets/getall?page='+i+'&tahun=2023&s='+searchText;
+                }
+
                 fetch(url)
                     .then(response => response.json()) 
                     .then(data => {
@@ -98,6 +119,7 @@
 
                         maxPages = data.last_page
                         maxPage.textContent = maxPages;
+                        showPagination(maxPages)
 
                     })
                     .catch(error => console.error('Error:', error));
@@ -119,14 +141,52 @@
             const handleNext = () => {
                 index++
                 fetchApi(index);
+                // showPagination()
             }
 
             const handlePrev = () => {
                 index--
                 fetchApi(index);
+                // showPagination()
+            }
+
+            const showPagination = (max) => {
+                pagination.innerHTML = "";
+                
+                if (maxPages > 1 || maxPages === 0) {
+                    if ((maxLooping-index) < 1) {
+                        maxLooping=maxLooping+3
+                        currentLooping=index-1
+                    }
+
+                    if (max < 5) {
+                        maxLooping=max
+                    }
+                    
+                    for (let i=currentLooping; i <= maxLooping; i++) {
+                        const button = document.createElement("button");
+                        button.innerText = i;
+                        button.className ="btn btn-light";
+
+                        if (i === index) {
+                            button.disabled = true;
+                            button.classList.add("btn-primary");
+                            button.classList.remove("btn-light");
+                        }
+
+                        button.addEventListener("click", () => {
+                            index = i
+                            fetchApi(i);
+                            // showPagination();
+                        });
+
+                        pagination.appendChild(button);
+                    }
+                }
             }
 
             fetchApi(index);
+            // showPagination();
         </script>
     </body>
 </html>
